@@ -10,4 +10,5 @@ export interface ItemCarrinho {
   produto: Produto;
   quantidade: number;
   subtotal: number;
+  desconto?: number;
 }

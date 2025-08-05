@@ -1,54 +1,81 @@
-import React, { useState } from 'react';
-import { BuscaProduto } from './components/BuscaProduto';
-import { Carrinho } from './components/Carrinho';
-import { Produto, ItemCarrinho } from './types';
-import './App.css';
+import React, { useState } from "react";
+import { BuscaProduto } from "./components/BuscaProduto";
+import { Carrinho } from "./components/Carrinho";
+import type { Produto, ItemCarrinho } from "./types";
+import "./App.css";
 
 function App() {
   const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([]);
+  const [descontoGeral, setDescontoGeral] = useState<number>(0);
 
-  const adicionarAoCarrinho = (produto: Produto) => {
-    setItensCarrinho(itensAtuais => {
-      const itemExistente = itensAtuais.find(item => item.produto.id === produto.id);
-      
+  const adicionarAoCarrinho = (produto: Produto, quantidade: number = 1) => {
+    setItensCarrinho((itensAtuais) => {
+      const itemExistente = itensAtuais.find((item) => item.produto.id === produto.id);
+
       if (itemExistente) {
-        return itensAtuais.map(item =>
+        return itensAtuais.map((item) =>
           item.produto.id === produto.id
             ? {
                 ...item,
-                quantidade: item.quantidade + 1,
-                subtotal: (item.quantidade + 1) * produto.preco
+                quantidade: item.quantidade + quantidade,
+                subtotal: (item.quantidade + quantidade) * produto.preco,
               }
             : item
         );
       } else {
-        return [...itensAtuais, {
-          produto,
-          quantidade: 1,
-          subtotal: produto.preco
-        }];
+        return [
+          ...itensAtuais,
+          {
+            produto,
+            quantidade: quantidade,
+            subtotal: produto.preco * quantidade,
+          },
+        ];
       }
     });
   };
 
   const removerItem = (index: number) => {
-    setItensCarrinho(itensAtuais => itensAtuais.filter((_, i) => i !== index));
+    setItensCarrinho((itensAtuais) => itensAtuais.filter((_, i) => i !== index));
   };
 
   const alterarQuantidade = (index: number, novaQuantidade: number) => {
     if (novaQuantidade <= 0) return;
-    
-    setItensCarrinho(itensAtuais =>
+
+    setItensCarrinho((itensAtuais) =>
       itensAtuais.map((item, i) =>
         i === index
           ? {
               ...item,
               quantidade: novaQuantidade,
-              subtotal: novaQuantidade * item.produto.preco
+              subtotal: novaQuantidade * item.produto.preco,
             }
           : item
       )
     );
+  };
+
+  const limparCarrinho = () => {
+    setItensCarrinho([]);
+    setDescontoGeral(0);
+  };
+
+  const aplicarDesconto = (index: number, percentual: number) => {
+    setItensCarrinho((itensAtuais) =>
+      itensAtuais.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              desconto: percentual,
+              subtotal: item.produto.preco * item.quantidade * (1 - percentual / 100),
+            }
+          : item
+      )
+    );
+  };
+
+  const aplicarDescontoGeral = (percentual: number) => {
+    setDescontoGeral(percentual);
   };
 
   return (
@@ -62,8 +89,8 @@ function App() {
               <p className="text-blue-200 mt-1">Sistema de Ponto de Venda</p>
             </div>
             <div className="text-right">
-              <p className="text-blue-200">Data: {new Date().toLocaleDateString('pt-BR')}</p>
-              <p className="text-blue-200">Hora: {new Date().toLocaleTimeString('pt-BR')}</p>
+              <p className="text-blue-200">Data: {new Date().toLocaleDateString("pt-BR")}</p>
+              <p className="text-blue-200">Hora: {new Date().toLocaleTimeString("pt-BR")}</p>
             </div>
           </div>
         </header>
@@ -73,24 +100,38 @@ function App() {
           {/* Coluna da Busca */}
           <div>
             <BuscaProduto onAdicionarAoCarrinho={adicionarAoCarrinho} />
-            
+
             {/* Informações de Uso */}
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
               <h3 className="text-blue-800 font-semibold mb-2">Como usar:</h3>
               <ul className="text-blue-700 text-sm space-y-1">
                 <li>• Digite o código, código de barras ou descrição do produto</li>
-                <li>• Pressione <strong>Enter</strong> para adicionar ao carrinho</li>
+                <li>• Para adicionar quantidade: digite "2*001" (2 unidades do produto 001)</li>
+                <li>
+                  • Pressione <strong>Enter</strong> para adicionar ao carrinho
+                </li>
                 <li>• Ajuste as quantidades diretamente no carrinho</li>
+                <li>
+                  • Pressione <strong>Ctrl + F6</strong> para desconto individual
+                </li>
+                <li>
+                  • Pressione <strong>Ctrl + F7</strong> para desconto geral
+                </li>
+                <li>• Use o campo "Desconto Geral" para aplicar desconto em toda a compra</li>
               </ul>
             </div>
           </div>
 
           {/* Coluna do Carrinho */}
           <div>
-            <Carrinho 
+            <Carrinho
               itens={itensCarrinho}
               onRemoverItem={removerItem}
               onAlterarQuantidade={alterarQuantidade}
+              onLimparCarrinho={limparCarrinho}
+              onAplicarDesconto={aplicarDesconto}
+              onAplicarDescontoGeral={aplicarDescontoGeral}
+              descontoGeral={descontoGeral}
             />
           </div>
         </div>
